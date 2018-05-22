@@ -1,0 +1,38 @@
+main{
+    margin-top: 60px;
+}
+
+#file-upload{
+    opacity: 0;
+}
+
+/* .center {
+    margin: auto;
+    width: 50%;
+    padding: 10px;
+} */
+
+#svg-graph{
+    border: 2px solid gray;
+    margin: auto;
+    /* width: 80%; */
+    /* width: 800px; */
+    height: 500px;
+    display: block;
+}
+
+.graph-row{
+    padding-top: 20px;
+}
+
+.nodeLabel{
+    padding-top: 70px;
+}
+
+.input-content{
+    border: 2px solid gray;
+}
+
+.download-prufer{
+    padding-top: 10px;
+}

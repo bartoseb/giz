@@ -1,0 +1,99 @@
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <link rel="icon" href="../../../../favicon.ico">
+
+    <title>GIZ - TASK 1</title>
+
+    <!-- Bootstrap core CSS -->
+    <link href="./css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Custom styles for this template -->
+    <link href="./css/giz.css" rel="stylesheet">
+  </head>
+
+  <body>
+
+    <nav class="navbar navbar-expand-md navbar-dark bg-dark fixed-top">
+      <a class="navbar-brand" href="#">Grafy</a>
+      <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarsExampleDefault" aria-controls="navbarsExampleDefault" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+
+      <div class="collapse navbar-collapse" id="navbarsExampleDefault">
+        <ul class="navbar-nav mr-auto">
+          <li class="nav-item" data-bind="css : { active : isHuffmanMode}">
+            <a class="nav-link" href="#" data-bind="click : pageVisible.bind($data, 'decode-huffman')">Huffman</a>
+          </li>
+          <li class="nav-item" data-bind="css : { active : isPruferMode}">
+            <a class="nav-link" href="#" data-bind="click : pageVisible.bind($data, 'decode-prufer')">Prufer</a>
+          </li>
+        </ul>
+      </div>
+    </nav>
+
+    <main role="main" class="container">
+
+      <div class="part-one" data-bind="if: isHuffmanMode">
+        <h3>Dekodowanie kodu Huffmana</h3>
+        <div class="row">
+            <div class="col-md-12" data-bind="visible: !inputFileContent()">
+                <input type="file" id="file-upload" data-bind="event : { change : loadFileHandler }">
+                <button class="btn btn-primary" data-bind="click: loadFile">Wgraj plik</button>
+            </div>          
+          </div>
+          <div class="row graph-row" data-bind="visible: inputFileContent()">
+              <div class="col-md-2 input-content">
+                  <h4>Dane wejściowe</h4>
+                  <p data-bind="html: inputFileContent"></p>
+                </div>
+                <div class="col-md-10">
+                  <div id="svg-graph"></div>
+                </div>
+              </div>
+              <div class="row download-prufer" data-bind="visible: inputFileContent()">
+                  <button class="btn btn-primary" data-bind="click: downloadPrufer">Pobierz kod Prufera</button>
+          </div>
+      </div>
+
+      <div class="part-one" data-bind="if: isPruferMode">
+        <h3>Dekodowanie kodu Pruffera</h3>
+        <div class="row">
+          <div class="col-md-12" data-bind="visible: !inputFileContent()">
+              <input type="file" id="file-upload" data-bind="event : { change : loadFileHandler }">
+              <button class="btn btn-primary" data-bind="click: loadFile">Wgraj plik</button>
+          </div>          
+        </div>
+        <div class="row graph-row" data-bind="visible: inputFileContent()">
+            <div class="col-md-2  input-content">
+                <h4>Dane wejściowe</h4>
+                <p data-bind="html: inputFileContent"></p>
+            </div>
+            <div class="col-md-10">
+                <div id="svg-graph"></div>
+            </div>
+        </div>
+      </div>
+
+    </main><!-- /.container -->
+
+    <!-- Bootstrap core JavaScript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>  
+    <script type="text/javascript" src="./js/cytoscape.min.js"></script>
+    <script type="text/javascript" src="./js/cytoscape-node-html-label.min.js"></script>
+    <script type="text/javascript" src="./js/knockout-3.4.2.js"></script>
+    <script src="./js/main.js" type="text/javascript"></script>
+    <script>
+      $(document).ready(function(){
+        ko.applyBindings(mainVM);
+      })
+    </script>
+  </body>
+</html>
