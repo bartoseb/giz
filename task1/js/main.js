@@ -196,7 +196,7 @@ var mainVM = function() {
         }
         console.log(edges);
         console.log(nodes);
-        drawTree(nodeNumber, prepareNodes(nodes), prepareEdges(edges));
+        drawTree(nodeNumber+1, prepareNodes(nodes), prepareEdges(edges));
         //drawTree(nodeNumber, nodes, edges);
         console.log(deg);
         var prufer = {
@@ -272,15 +272,15 @@ var mainVM = function() {
     var prepareNodes = function(nodes){
         var result = [];
         for(var i = 0; i < nodes.length; i++){
-            result.push({ group: "nodes", data: { id: i , label: nodes[i].label}});
+            result.push({ group: "nodes", data: { id: i+1 , label: nodes[i].label}});
         }
         return result;
     }
     var prepareEdges = function(edges){
         var result = [];
         for(var i = 0; i < edges.length; i++){
-            var left = edges[i].left;
-            var right = edges[i].right;
+            var left = edges[i].left+1;
+            var right = edges[i].right+1;
             
             result.push({
                 group: "edges", data: { id: "e"+left+"-"+right, source: left, target: right }
