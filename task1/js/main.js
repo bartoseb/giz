@@ -1,4 +1,5 @@
 var mainVM = function() {
+    // GUI specific stuff
     var viewModel = {
         pageVisible : ko.observable('decode-huffman'),
         fileContent : ko.observable(''),
@@ -29,12 +30,21 @@ var mainVM = function() {
             }
         },
     };
+
     viewModel.isHuffmanMode = ko.computed(function(){
         return viewModel.pageVisible() === 'decode-huffman';
     });
+
     viewModel.isPruferMode = ko.computed(function(){
         return viewModel.pageVisible() === 'decode-prufer';
     });
+
+    viewModel.pageVisible.subscribe(function(){
+        viewModel.inputFileContent('');
+        viewModel.pruferObject('');
+        viewModel.huffmanArray('');
+        viewModel.fileContent('');
+    })
 
     //handle huffman decoding
     viewModel.fileContent.subscribe(function(data){
@@ -60,14 +70,140 @@ var mainVM = function() {
         }
     })
 
+    //huffman part
+    var parseHuffmanCode = function(huffmanArray){
+        var v = huffmanArray.length * 2 - 1;
+        var nodeNumber = v;
+        var e = v - 1;
+        var deg = Array.apply(null, {length: v}).map(x => 0);
+        huffmanArray = huffmanArray.map(x => {
+            nodeNumber -=1;
+            return {id : nodeNumber, label: x.label, value: x.value};
+        })
+        edges = Array.apply(null, {length: e}).map(x => {return {}});
+        nodes = Array.apply(null, {length: v}).map(x => {return { label: ''}});
+        var edgeIdx = 0;
+        while(huffmanArray.length > 1){
 
+            var min1 = findMin(huffmanArray);
+            huffmanArray = huffmanArray.filter(x => x.id != min1.id);
 
-    viewModel.pageVisible.subscribe(function(){
-        viewModel.inputFileContent('');
-        viewModel.pruferObject('');
-        viewModel.huffmanArray('');
-        viewModel.fileContent('');
-    })
+            var min2 = findMin(huffmanArray);
+            huffmanArray = huffmanArray.filter(x => x.id != min2.id);
+
+            nodeNumber -= 1;
+            nodes[min1.id].label = min1.label;
+            nodes[min2.id].label = min2.label;
+            
+            edges[edgeIdx].left = min1.id;
+            edges[edgeIdx].right = nodeNumber;
+            edgeIdx += 1;
+
+            edges[edgeIdx].left = min2.id;
+            edges[edgeIdx].right = nodeNumber;
+            edgeIdx += 1;
+
+            huffmanArray.push({label: '', value: min1.value + min2.value, id: nodeNumber});
+        }
+
+        for(var ed of edges){
+            deg[ed.left] +=1;
+            deg[ed.right] +=1;
+        }
+
+        drawTree(nodeNumber+1, prepareNodes(nodes), prepareEdges(edges));
+
+        //generate prufer code
+        var prufer = {
+            root : nodeNumber+1,
+            code : [],
+            labels : []
+        };
+        var edgesCopy = edges.slice();
+        for(var i = 0; i < v - 2; i++){
+            var minNode = v * 3;
+            var edgeIndex = -1;
+            for(var j = 0; j < edgesCopy.length; j++){
+                if(deg[edgesCopy[j].left]==1){
+                    if(minNode > edgesCopy[j].left){
+                        minNode = edgesCopy[j].left;
+                        edgeIndex = j;
+                    }
+                }
+                if(deg[edgesCopy[j].right]==1){
+                    if(minNode > edgesCopy[j].right){
+                        minNode = edgesCopy[j].right;
+                        edgeIndex = j;
+                    }
+                }
+            }
+            
+            deg[edgesCopy[edgeIndex].left] -= 1;
+            deg[edgesCopy[edgeIndex].right] -= 1;
+            if(deg[edgesCopy[edgeIndex].left] > 0){
+                prufer.code.push(edgesCopy[edgeIndex].left+1);
+            }
+            else{
+                prufer.code.push(edgesCopy[edgeIndex].right+1);
+            }
+            edgesCopy.splice(edgeIndex,1);
+            
+            var nodeLabel = nodes[minNode].label
+            if(nodeLabel){
+                prufer.labels.push(nodeLabel);
+            }
+        }
+
+        prufer.labels = nodes.map(x => { if(x.label) return x.label;}).filter(x => x);
+        viewModel.pruferObject(prufer);
+    }
+
+    var download = function(filename, text) {
+        var element = document.createElement('a');
+        element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
+        element.setAttribute('download', filename);
+      
+        element.style.display = 'none';
+        document.body.appendChild(element);
+      
+        element.click();
+      
+        document.body.removeChild(element);
+    }
+
+    var findMin = function(huffmanArray){
+        var lowest = huffmanArray[0];
+        
+        for(var i = 0; i < huffmanArray.length; i++){
+            if(lowest.value > huffmanArray[i].value){
+                lowest = huffmanArray[i];
+            }
+        }
+        return lowest;
+    }
+    
+    var prepareNodes = function(nodes){
+        var result = [];
+        for(var i = 0; i < nodes.length; i++){
+            result.push({ group: "nodes", data: { id: i+1 , label: nodes[i].label}});
+        }
+        return result;
+    }
+    
+    var prepareEdges = function(edges){
+        var result = [];
+        for(var i = 0; i < edges.length; i++){
+            var left = edges[i].left+1;
+            var right = edges[i].right+1;
+            
+            result.push({
+                group: "edges", data: { id: "e"+left+"-"+right, source: left, target: right }
+            });
+        }
+        return result;
+    }
+
+    //prufer part
     var parsePruferInput = function(input){
         var array = input.split('\n');
         var result = {
@@ -112,7 +248,6 @@ var mainVM = function() {
                     break;
                 }
             }
-            console.log(deg);
             edges.push({
                 group: "edges", data: { id: "e"+currentVertex+"-"+lowestVertex, source: currentVertex, target: lowestVertex }
             });
@@ -131,7 +266,6 @@ var mainVM = function() {
         edges.push({
             group: "edges", data: { id: "e"+left+"-"+right, source: left, target: right }
         });
-        console.log(edges);
         return {
             edges: edges,
             leaves : leavesId
@@ -151,147 +285,8 @@ var mainVM = function() {
         });
     }
 
-    var parseHuffmanCode = function(huffmanArray){
-        var v = huffmanArray.length * 2 - 1;
-        var nodeNumber = v;
-        var e = v - 1;
-        var deg = Array.apply(null, {length: v}).map(x => 0);
-        huffmanArray = huffmanArray.map(x => {
-            nodeNumber -=1;
-            return {id : nodeNumber, label: x.label, value: x.value};
-        })
-        edges = Array.apply(null, {length: e}).map(x => {return {}});
-        nodes = Array.apply(null, {length: v}).map(x => {return { label: ''}});
-        var edgeIdx = 0;
-        while(huffmanArray.length > 1){
-
-            var min1 = findMin(huffmanArray);
-            huffmanArray = huffmanArray.filter(x => x.id != min1.id);
-
-            var min2 = findMin(huffmanArray);
-            huffmanArray = huffmanArray.filter(x => x.id != min2.id);
-
-            nodeNumber -= 1;
-            nodes[min1.id].label = min1.label;
-            nodes[min2.id].label = min2.label;
-            
-            edges[edgeIdx].left = min1.id;
-            edges[edgeIdx].right = nodeNumber;
-            edgeIdx += 1;
-
-            edges[edgeIdx].left = min2.id;
-            edges[edgeIdx].right = nodeNumber;
-            edgeIdx += 1;
-            
-            // deg[min1.id] += 1;
-            // deg[min2.id] += 1;
-            // deg[nodeNumber] += 1;
-
-            huffmanArray.push({label: '', value: min1.value + min2.value, id: nodeNumber});
-        }
-
-        for(var ed of edges){
-            deg[ed.left] +=1;
-            deg[ed.right] +=1;
-        }
-        console.log(edges);
-        console.log(nodes);
-        drawTree(nodeNumber+1, prepareNodes(nodes), prepareEdges(edges));
-        //drawTree(nodeNumber, nodes, edges);
-        console.log(deg);
-        var prufer = {
-            root : nodeNumber+1,
-            code : [],
-            labels : []
-        };
-        var edgesCopy = edges.slice();
-        for(var i = 0; i < v - 2; i++){
-            var minNode = v * 3;
-            var edgeIndex = -1;
-            for(var j = 0; j < edgesCopy.length; j++){
-                if(deg[edgesCopy[j].left]==1){
-                    if(minNode > edgesCopy[j].left){
-                        minNode = edgesCopy[j].left;
-                        edgeIndex = j;
-                    }
-                }
-                if(deg[edgesCopy[j].right]==1){
-                    if(minNode > edgesCopy[j].right){
-                        minNode = edgesCopy[j].right;
-                        edgeIndex = j;
-                    }
-                }
-            }
-            
-            deg[edgesCopy[edgeIndex].left] -= 1;
-            deg[edgesCopy[edgeIndex].right] -= 1;
-            if(deg[edgesCopy[edgeIndex].left] > 0){
-                prufer.code.push(edgesCopy[edgeIndex].left+1);
-            }
-            else{
-                prufer.code.push(edgesCopy[edgeIndex].right+1);
-            }
-            edgesCopy.splice(edgeIndex,1);
-            
-            var nodeLabel = nodes[minNode].label
-            if(nodeLabel){
-                prufer.labels.push(nodeLabel);
-            }
-        }
-        //prufer.code.reverse();
-        prufer.labels = nodes.map(x => {
-            if(x.label) return x.label;
-        }).filter(x => x);
-        viewModel.pruferObject(prufer);
-    }
-
-
-    var download = function(filename, text) {
-        var element = document.createElement('a');
-        element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
-        element.setAttribute('download', filename);
-      
-        element.style.display = 'none';
-        document.body.appendChild(element);
-      
-        element.click();
-      
-        document.body.removeChild(element);
-    }
-
-    var findMin = function(huffmanArray){
-        var lowest = huffmanArray[0];
-        
-        for(var i = 0; i < huffmanArray.length; i++){
-            if(lowest.value > huffmanArray[i].value){
-                lowest = huffmanArray[i];
-            }
-        }
-        return lowest;
-    }
-    var prepareNodes = function(nodes){
-        var result = [];
-        for(var i = 0; i < nodes.length; i++){
-            result.push({ group: "nodes", data: { id: i+1 , label: nodes[i].label}});
-        }
-        return result;
-    }
-    var prepareEdges = function(edges){
-        var result = [];
-        for(var i = 0; i < edges.length; i++){
-            var left = edges[i].left+1;
-            var right = edges[i].right+1;
-            
-            result.push({
-                group: "edges", data: { id: "e"+left+"-"+right, source: left, target: right }
-            });
-        }
-        return result;
-    }
+    //common
     var drawTree = function(_root, _nodes, _edges){
-        console.log("before drawing graph...");
-        console.log(_nodes);
-        console.log(_edges);
         var cy = cytoscape({
             container: document.getElementById('svg-graph'),
             style: [ // the stylesheet for the graph
