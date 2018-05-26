@@ -49,11 +49,23 @@ var mainVM = function() {
     //handle huffman decoding
     viewModel.fileContent.subscribe(function(data){
         if(data && viewModel.isHuffmanMode()){
-            viewModel.inputFileContent(data.split('\n').join('\<br/\>'));
-            viewModel.huffmanArray(data.split('\n').map(x => {
-                var row = x.split(' ');
-                return {label : row[0], value: parseFloat(row[1])};
-            }));
+            viewModel.inputFileContent(data);
+            
+            var _hArray = [];
+            var letters = data.split('');
+            var uniqueLetters = new Set(letters);
+
+            for(var key of uniqueLetters.keys()){
+
+                var occurence = 0;
+                for(var i = 0; i < letters.length; i++){
+                    if(letters[i]==key){
+                        occurence++;
+                    }
+                }
+                _hArray.push({label : key, value: occurence});
+            }
+            viewModel.huffmanArray(_hArray);
             parseHuffmanCode(viewModel.huffmanArray().slice())
         }
     });
